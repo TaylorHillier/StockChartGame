@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "es2016",
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+
+    // Add source maps for debugging
+    "sourceMap": true,
+
+    // Specify the output directory for compiled JavaScript files
+    "outDir": "./dist",
+
+    // Specify the root directory of your TypeScript source files
+    "rootDir": "./src"
+  }
+}
