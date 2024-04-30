@@ -62,22 +62,33 @@ class Trade {
         this.tradeStrength = tradeStrength;
     }
 }
-function simulateTrades(stock, currentCandle, chartProps, onComplete) {
-    let intervalId = setInterval(() => {
-        // Randomize trade volume and strength
+let isSimulationRunning = false;
+let tradeInterval;
+let candleTimer;
+function simulateTrades(stock, chartProps) {
+    // Initialize the first candle if not already present
+    if (!currentCandle) {
+        currentCandle = new Candlestick(stock.price, Date.now());
+    }
+    clearInterval(tradeInterval); // Clear previous trade simulation
+    clearTimeout(candleTimer); // Clear the previous timer for candle completion
+    // Trade simulation interval
+    tradeInterval = setInterval(() => {
+        if (!isSimulationRunning) {
+            clearInterval(tradeInterval);
+            return;
+        }
+        // Simulate trade
         const tradeVolume = Math.floor(Math.random() * 1000 + 100);
-        const priceChange = Math.random() * 1 - 0.5; // Strength between -2.5 and +2.5
-        const tradeType = Math.random() > 0.5; // Randomly true (buy) or false (sell)
-        stock.updatePrice(priceChange); // Update stock price based on trade
-        currentCandle.update(priceChange, tradeVolume); // Update only the current candle
-        console.log(`Trade executed: ${tradeType ? 'Buy' : 'Sell'} - Volume: ${tradeVolume}, Price Change: ${priceChange}`);
-        // Update the visualization of the candle
-        drawCandlesticks([...candlesticks, currentCandle]); // Render all candles plus the current updating candle
-    }, 1000); // Simulate a trade every second
-    // Stop trading and finalize the current candle after the period ends
-    setTimeout(() => {
-        clearInterval(intervalId);
-        onComplete(); // This will push the current candle to the array and draw
+        const priceChange = (Math.random() * 5) - 2.5;
+        stock.updatePrice(priceChange);
+        currentCandle.update(priceChange, tradeVolume);
+        drawCandlesticks([...candlesticks, currentCandle]); // Update visualization
+    }, 1000);
+    // Timeout to handle the completion of the current candle
+    candleTimer = setTimeout(() => {
+        handleCandleCompletion();
+        simulateTrades(stock, chartProps); // Continue with new candle
     }, getPeriodMilliseconds(chartProps.periodicity));
 }
 function simulateMarket(chartProps, stock) {
@@ -189,9 +200,10 @@ const appleStock = new Stock("AAPL", 150);
 let candlesticks = []; // Declaration of the candlesticks array
 let currentCandle = new Candlestick(appleStock.price, Date.now());
 function handleCandleCompletion() {
-    candlesticks.push(currentCandle);
-    currentCandle = new Candlestick(appleStock.price, Date.now());
-    drawCandlesticks(candlesticks);
+    candlesticks.push(currentCandle); // Push the completed candle to the list
+    // Start a new candle with the last close price
+    currentCandle = new Candlestick(currentCandle.close, Date.now());
+    drawCandlesticks(candlesticks); // Redraw all candles including the new one
 }
 document.addEventListener('DOMContentLoaded', () => {
     const canvas = document.getElementById('stockChart');
@@ -214,15 +226,23 @@ document.addEventListener('DOMContentLoaded', () => {
     let chartProps = new ChartProperties(parseInt(barsToLoadInput.value, 10), periodicitySelect.value, 'linear');
     if (startButton) {
         startButton.addEventListener('click', () => {
-            const barsToLoad = parseInt(barsToLoadInput.value, 10);
-            const periodicity = periodicitySelect.value;
-            chartProps = new ChartProperties(barsToLoad, periodicity, 'linear');
-            candlesticks = simulateMarket(chartProps, appleStock);
-            drawCandlesticks(candlesticks);
-            let lastCandleClose = candlesticks[candlesticks.length - 1].close;
-            currentCandle = new Candlestick(lastCandleClose, Date.now());
-            simulateTrades(appleStock, currentCandle, chartProps, handleCandleCompletion);
-            console.log(chartProps.barsToLoad, chartProps.periodicity);
+            isSimulationRunning = !isSimulationRunning;
+            startButton.textContent = isSimulationRunning ? 'Stop Simulation' : 'Start Simulation';
+            if (isSimulationRunning) {
+                const barsToLoad = parseInt(barsToLoadInput.value, 10);
+                const periodicity = periodicitySelect.value;
+                chartProps = new ChartProperties(barsToLoad, periodicity, 'linear');
+                // Reinitialize market simulation or continue with existing data
+                candlesticks = simulateMarket(chartProps, appleStock);
+                let lastClose = candlesticks.length > 0 ? candlesticks[candlesticks.length - 1].close : appleStock.price;
+                currentCandle = new Candlestick(lastClose, Date.now());
+                drawCandlesticks(candlesticks); // Draw existing candlesticks
+                simulateTrades(appleStock, chartProps); // Start trading simulation
+            }
+            else {
+                clearInterval(tradeInterval); // Stop trading simulation
+                clearTimeout(candleTimer); // Stop candle completion timer
+            }
         });
     }
 });
