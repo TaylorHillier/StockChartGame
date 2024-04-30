@@ -84,6 +84,28 @@ class Trade{
     }
 }
 
+class SimTrade{
+    public entryPrice: number;
+    public profitLoss: number;
+    public isActive: boolean;
+    public tradeDirection: boolean;
+
+    constructor(entryPrice: number, profitLoss: number, isActive: boolean, tradeDirection: boolean){
+        this.entryPrice = entryPrice;
+        this.profitLoss = profitLoss;
+        this.isActive = isActive;
+        this.tradeDirection = tradeDirection;
+    }
+}
+
+class SimAccount{
+    public totalPnL: number;
+
+    constructor(totalPnL: number){
+        this.totalPnL = totalPnL;
+    }
+}
+
 let isSimulationRunning = false;
 let tradeInterval: number | undefined;
 let candleTimer: number | undefined;
@@ -120,10 +142,6 @@ function simulateTrades(stock: Stock, chartProps: ChartProperties) {
     }, getPeriodMilliseconds(chartProps.periodicity));
 }
 
-
-
-
-
 function simulateMarket(chartProps: ChartProperties, stock: Stock): Candlestick[] {
     let now = new Date();
     let endMS = now.getTime();
@@ -152,7 +170,6 @@ function simulateMarket(chartProps: ChartProperties, stock: Stock): Candlestick[
     stock.price = lastClose; // Update the stock price to the last close
     return candlesticks;
 }
-
 
 function getPeriodMilliseconds(periodicity: Periodicity): number {
     switch (periodicity) {
@@ -252,6 +269,9 @@ function drawCandlesticks(candlesticks: Candlestick[]) {
     });
 }
 
+function drawTradeInfo(trade: SimTrade){
+
+}
 
 // Ensure that these variables are declared and initialized before they are used
 const appleStock = new Stock("AAPL", 150);
@@ -268,7 +288,16 @@ function handleCandleCompletion() {
     drawCandlesticks(candlesticks); // Redraw all candles including the new one
 }
 
+let currentTrade: SimTrade | null = null;
+let simAccount = new SimAccount(0);
 
+function updateTradeDisplay() {
+    if (currentTrade) {
+        console.log(`Current Trade - Entry Price: ${currentTrade.entryPrice}, Active: ${currentTrade.isActive}, P&L: ${currentTrade.profitLoss}`);
+    } else {
+        console.log("No active trade.");
+    }
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     const canvas = document.getElementById('stockChart') as HTMLCanvasElement | null;
@@ -285,6 +314,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const startButton = document.getElementById('startSimulation');
     const periodicitySelect = document.getElementById('periodicity') as HTMLSelectElement;
     const barsToLoadInput = document.getElementById('barsToLoad') as HTMLInputElement;
+    const buyButton = document.getElementById('buy');
+    const sellButton = document.getElementById('sell');
+    const closeButton = document.getElementById('close');
 
     if (!startButton || !periodicitySelect || !barsToLoadInput) {
         console.error('One or more interactive elements are missing!');
@@ -320,6 +352,57 @@ document.addEventListener('DOMContentLoaded', () => {
                 clearTimeout(candleTimer);  // Stop candle completion timer
             }
         });
+    }
+
+    if (!buyButton || !sellButton || !closeButton) {
+        console.error('One or more trading buttons are missing!');
+    } else {
+        console.log("Trading buttons are initialized.");
+    }
+
+    if(!isSimulationRunning){
+       
+        if (buyButton) {
+            buyButton.addEventListener('click', () => {
+                if (!currentTrade || !currentTrade.isActive) {
+                    currentTrade = new SimTrade(appleStock.price, 0, true, true);
+                    updateTradeDisplay();
+                } else {
+                    console.log("Close current trade before opening a new one.");
+                }
+            });
+        }
+        
+        if (sellButton) {
+            sellButton.addEventListener('click', () => {
+                if (!currentTrade || !currentTrade.isActive) {
+                    currentTrade = new SimTrade(appleStock.price, 0, true, false);
+                    updateTradeDisplay();
+                } else {
+                    console.log("Close current trade before opening a new one.");
+                }
+            });
+        }
+        
+        if (closeButton) {
+            closeButton.addEventListener('click', () => {
+                if (currentTrade && currentTrade.isActive) {
+                    // Calculate profit or loss
+                    const currentPrice = appleStock.price;
+                    currentTrade.profitLoss = (currentTrade.tradeDirection ? 1 : -1) * (currentPrice - currentTrade.entryPrice);
+                    currentTrade.isActive = false;
+        
+                    // Update account total PnL
+                    simAccount.totalPnL += currentTrade.profitLoss;
+        
+                    console.log(`Trade Closed. P&L: ${currentTrade.profitLoss}`);
+                    console.log(`Total P&L: ${simAccount.totalPnL}`);
+        
+                    // Reset the current trade
+                    currentTrade = null;
+                }
+            });
+        }
     }
     
     
