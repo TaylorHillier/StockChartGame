@@ -106,7 +106,7 @@ function simulateTrades(stock: Stock, chartProps: ChartProperties) {
 
         // Simulate trade
         const tradeVolume = Math.floor(Math.random() * 1000 + 100);
-        const priceChange = (Math.random() * 5) - 2.5;
+        const priceChange = (Math.random() * 1) - 0.5;
         stock.updatePrice(priceChange);
         currentCandle.update(priceChange, tradeVolume);
 
@@ -133,7 +133,7 @@ function simulateMarket(chartProps: ChartProperties, stock: Stock): Candlestick[
 
     for (let i = startMS; i < endMS; i += getPeriodMilliseconds(chartProps.periodicity)) {
         let open = lastClose; // Set open to last candle's close
-        let close = open + (Math.random() * 5 - 2); // Random change between -10 and +10
+        let close = open + (Math.random() * 5 - 2.5); // Random change between -10 and +10
         let high = Math.max(open, close) + Math.random() * 2; // High is above the max of open/close
         let low = Math.min(open, close) - Math.random() * 2; // Low is below the min of open/close
         let volume = Math.floor(Math.random() * 1000 + 100); // Random volume from 100 to 1100
