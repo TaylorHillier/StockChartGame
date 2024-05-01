@@ -63,11 +63,12 @@ class Trade {
     }
 }
 class SimTrade {
-    constructor(entryPrice, profitLoss, isActive, tradeDirection) {
+    constructor(entryPrice, profitLoss, isActive, tradeDirection, contracts) {
         this.entryPrice = entryPrice;
         this.profitLoss = profitLoss;
         this.isActive = isActive;
         this.tradeDirection = tradeDirection;
+        this.contracts = contracts;
     }
 }
 class SimAccount {
@@ -223,8 +224,12 @@ function handleCandleCompletion() {
 let currentTrade = null;
 let simAccount = new SimAccount(0);
 function updateTradeDisplay() {
+    const pnl = document.getElementById('pnl');
     if (currentTrade) {
-        console.log(`Current Trade - Entry Price: ${currentTrade.entryPrice}, Active: ${currentTrade.isActive}, P&L: ${currentTrade.profitLoss}`);
+        if (pnl) {
+            pnl.innerHTML = `$ ${simAccount.totalPnL}`;
+            console.log(`Current Trade - Entry Price: ${currentTrade.entryPrice}, Active: ${currentTrade.isActive}, P&L: ${currentTrade.profitLoss}`);
+        }
     }
     else {
         console.log("No active trade.");
@@ -247,6 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const buyButton = document.getElementById('buy');
     const sellButton = document.getElementById('sell');
     const closeButton = document.getElementById('close');
+    const contracts = document.getElementById('contracts');
     if (!startButton || !periodicitySelect || !barsToLoadInput) {
         console.error('One or more interactive elements are missing!');
         return;
@@ -280,10 +286,11 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log("Trading buttons are initialized.");
     }
     if (!isSimulationRunning) {
+        const numContracts = parseInt(contracts.value, 10);
         if (buyButton) {
             buyButton.addEventListener('click', () => {
                 if (!currentTrade || !currentTrade.isActive) {
-                    currentTrade = new SimTrade(appleStock.price, 0, true, true);
+                    currentTrade = new SimTrade(appleStock.price, 0, true, true, numContracts);
                     updateTradeDisplay();
                 }
                 else {
@@ -294,7 +301,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (sellButton) {
             sellButton.addEventListener('click', () => {
                 if (!currentTrade || !currentTrade.isActive) {
-                    currentTrade = new SimTrade(appleStock.price, 0, true, false);
+                    currentTrade = new SimTrade(appleStock.price, 0, true, false, numContracts);
                     updateTradeDisplay();
                 }
                 else {
@@ -307,12 +314,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (currentTrade && currentTrade.isActive) {
                     // Calculate profit or loss
                     const currentPrice = appleStock.price;
-                    currentTrade.profitLoss = (currentTrade.tradeDirection ? 1 : -1) * (currentPrice - currentTrade.entryPrice);
+                    currentTrade.profitLoss = (currentTrade.tradeDirection ? 1 : -1) * (currentPrice - currentTrade.entryPrice) * numContracts;
                     currentTrade.isActive = false;
                     // Update account total PnL
                     simAccount.totalPnL += currentTrade.profitLoss;
                     console.log(`Trade Closed. P&L: ${currentTrade.profitLoss}`);
                     console.log(`Total P&L: ${simAccount.totalPnL}`);
+                    updateTradeDisplay();
                     // Reset the current trade
                     currentTrade = null;
                 }
