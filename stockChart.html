@@ -4,32 +4,37 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Candlestick Chart</title>
-    <style>
-        canvas {
-            border: 1px solid black;
-        }
-    </style>
+    <link rel="stylesheet" href="./stockChart.css">
 </head>
 <body>
-    <label for="periodicity">Select Periodicity:</label>
-    <select id="periodicity">
-        <option value="1 minute">1 Minute</option>
-        <option value="5 minute">5 Minutes</option>
-        <option value="30 minute">30 Minutes</option>
-        <option value="1 hour">1 Hour</option>
-    </select>
-    
+    <div class="chartDiv">
+        <div class="controls" id="controls">
+            <div class="periodicityContainer">
+                <label for="periodicity">Periodicity:</label>
+                <select id="periodicity">
+                    <option value="1 minute">1 Minute</option>
+                    <option value="5 minute">5 Minutes</option>
+                    <option value="30 minute">30 Minutes</option>
+                    <option value="1 hour">1 Hour</option>
+                </select>
+            </div>
+            
+            <div class="barsToLoadContainer">
+                <label for="barsToLoad">Bars to Load:</label>
+                <input type="number" id="barsToLoad" value="60">
+            </div>
 
-    <label for="barsToLoad">Bars to Load:</label>
-    <input type="number" id="barsToLoad" value="60">
-
-    <button id="startSimulation">Start Simulation</button>
-
-    <button id="buy">Buy</button>
-    <button id="sell">Sell</button>
-    <button id="close">Close</button>
-    
-    <canvas id="stockChart" width="1200" height="800"></canvas>
+            <button id="startSimulation">Start Simulation</button>
+            <div class="tradingButtons" id="tradingButtons">
+                <div class="buynsell">
+                    <button id="buy">Buy</button>
+                    <button id="sell">Sell</button>
+                </div>
+                <button id="close">Close</button>
+            </div>
+        </div>
+        <canvas id="stockChart" width="1200" height="800"></canvas>
+    </div>      
     
     <script src="dist/index.js"></script>
 </body>

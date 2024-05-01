@@ -1,3 +1,69 @@
-#stockChart{
-    
+/* Apply styles to the body to ensure full height and centering */
+body, html {
+    height: 100%;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f4f4f4; /* Optional: just to improve visibility */
 }
+
+.chartDiv {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: white;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1); /* Optional: adds shadow for better visibility */
+    width: 80%; /* Adjust width as per requirement */
+    max-width: 1200px; /* Ensures it doesn't get too wide on larger screens */
+}
+
+#stockChart {
+    width: 100%; /* Ensures canvas takes the full width of its parent */
+    height: auto; /* Maintains aspect ratio without explicit height */
+}
+
+button, select, input[type="number"] {
+    margin-left: 5px;
+    margin-right: 5px;
+    padding: 5px;
+    border: 1px solid #ccc;
+}
+
+.controls{
+    display: flex;
+    align-items: center;
+}
+
+#tradingButtons{
+    display: flex;
+    flex-direction: column;
+}
+
+.buynsell{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-width: 200px;
+}
+
+#buy{
+    background-color: green;
+    color: white;
+    margin: 0;
+    width: 100%;
+}
+
+#sell{
+    background-color: red;
+    color: white;
+    margin: 0;
+    width: 100%;
+}
+
+#close{
+    background-color: black;
+    color: white;
+    margin: 0;
+}
+

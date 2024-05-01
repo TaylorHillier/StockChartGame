@@ -208,6 +208,8 @@ function drawCandlesticks(candlesticks) {
         }
     });
 }
+function drawTradeInfo(trade) {
+}
 // Ensure that these variables are declared and initialized before they are used
 const appleStock = new Stock("AAPL", 150);
 let candlesticks = []; // Declaration of the candlesticks array
