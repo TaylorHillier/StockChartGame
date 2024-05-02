@@ -60,7 +60,7 @@ class Candlestick {
         this.low = Math.min(this.low, newPrice);
         this.volume += tradeVolume;
 
-        console.log(`Updated Candlestick - Timestamp: ${new Date(this.timestamp).toISOString()}, Open: ${this.open}, High: ${this.high}, Low: ${this.low}, Close: ${this.close}, Volume: ${this.volume}`);
+       //console.log(`Updated Candlestick - Timestamp: ${new Date(this.timestamp).toISOString()}, Open: ${this.open}, High: ${this.high}, Low: ${this.low}, Close: ${this.close}, Volume: ${this.volume}`);
     }
 
     isUpCandle(): boolean {
@@ -135,6 +135,10 @@ function simulateTrades(stock: Stock, chartProps: ChartProperties) {
         currentCandle.update(priceChange, tradeVolume);
 
         drawCandlesticks([...candlesticks, currentCandle]);  // Update visualization
+        if(currentTrade){
+            updateTradeDisplay();
+        }
+       
     }, 1000);
 
     // Timeout to handle the completion of the current candle
@@ -190,6 +194,7 @@ function getPeriodMilliseconds(periodicity: Periodicity): number {
 
 function drawCandlesticks(candlesticks: Candlestick[]) {
     const canvas = document.getElementById('stockChart') as HTMLCanvasElement | null;
+    const controls = document.getElementById('controls')?.clientHeight;
     if (!canvas) {
         console.error('Canvas element not found!');
         return;
@@ -203,8 +208,13 @@ function drawCandlesticks(candlesticks: Candlestick[]) {
     }
 
     const width = canvas.width;
-    const height = canvas.height;
+    
+    var height = canvas.height;
 
+    if(controls){
+         height = canvas.height-controls;
+    }
+    
     // Clear the canvas
     ctx.clearRect(0, 0, width, height);
 
@@ -231,10 +241,24 @@ function drawCandlesticks(candlesticks: Candlestick[]) {
         ctx.fillStyle = '#000';
         ctx.fillText(`${price.toFixed(2)}`, margin.left - 40, y);
         ctx.beginPath();
-        ctx.moveTo(margin.left - 10, y);
+        ctx.moveTo(margin.left, y);
         ctx.lineTo(width - margin.right, y);
-        ctx.strokeStyle = '#ddd'; // Light gray for grid lines
+        ctx.strokeStyle = '#808080'; // Light gray for grid lines
         ctx.stroke();
+    }
+
+        // Draw entry price line for an active trade
+    if (currentTrade && currentTrade.isActive) {
+        const entryPriceY = margin.top + (maxPrice - currentTrade.entryPrice) * yScale;
+        ctx.beginPath();
+        ctx.moveTo(margin.left, entryPriceY);
+        ctx.lineTo(width - margin.right, entryPriceY);
+        ctx.strokeStyle = currentTrade.tradeDirection ? '#00ff00' : '#ff0000'; // Green for buy, red for sell
+        ctx.stroke();
+
+        // Optionally, add text to indicate the entry price
+        ctx.fillStyle = '#000';
+        ctx.fillText(`Entry Price: ${currentTrade.entryPrice.toFixed(2)}`, margin.left, entryPriceY - 5);
     }
 
     candlesticks.forEach((candle, index) => {
@@ -271,10 +295,6 @@ function drawCandlesticks(candlesticks: Candlestick[]) {
     });
 }
 
-function drawTradeInfo(trade: SimTrade){
-
-}
-
 // Ensure that these variables are declared and initialized before they are used
 const appleStock = new Stock("AAPL", 150);
 
@@ -294,18 +314,28 @@ let currentTrade: SimTrade | null = null;
 let simAccount = new SimAccount(0);
 
 function updateTradeDisplay() {
-    const pnl = document.getElementById('pnl');
-  
-    if (currentTrade) {
-        if(pnl){
-            pnl.innerHTML = `$ ${simAccount.totalPnL}`;
-            console.log(`Current Trade - Entry Price: ${currentTrade.entryPrice}, Active: ${currentTrade.isActive}, P&L: ${currentTrade.profitLoss}`);
-            
+    const pnlDisplay = document.getElementById('pnl');
+    const contractsInput = document.getElementById('contracts') as HTMLInputElement;
+    const numContracts = parseInt(contractsInput.value, 10);
+
+    if (currentTrade && currentTrade.isActive) {
+        const currentPrice = appleStock.price;
+        // Calculate current PnL
+        currentTrade.profitLoss = (currentTrade.tradeDirection ? 1 : -1) * (currentPrice - currentTrade.entryPrice) * numContracts;
+
+        // Update the display for the PnL of the current trade
+        if (pnlDisplay) {
+            pnlDisplay.style.color = currentTrade.profitLoss >= 0 ? 'green' : 'red';
+            pnlDisplay.innerHTML = `P&L: $${currentTrade.profitLoss.toFixed(2)}`;
         }
+
+        console.log(`Current Trade - Entry Price: ${currentTrade.entryPrice}, P&L: ${currentTrade.profitLoss}`);
     } else {
         console.log("No active trade.");
+      
     }
 }
+
 
 document.addEventListener('DOMContentLoaded', () => {
     const canvas = document.getElementById('stockChart') as HTMLCanvasElement | null;
@@ -333,7 +363,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     let chartProps = new ChartProperties(
-        parseInt(barsToLoadInput.value, 10),
+        parseInt(barsToLoadInput.value, 2),
         periodicitySelect.value as Periodicity,
         'linear'
     );
@@ -370,7 +400,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if(!isSimulationRunning){
-        const numContracts = parseInt(contracts.value, 10);
+        const numContracts = parseInt(contracts.value, 2);
+        const pnl = document.getElementById('pnl');
         if (buyButton) {
             buyButton.addEventListener('click', () => {
                 if (!currentTrade || !currentTrade.isActive) {
@@ -396,19 +427,24 @@ document.addEventListener('DOMContentLoaded', () => {
         if (closeButton) {
             closeButton.addEventListener('click', () => {
                 if (currentTrade && currentTrade.isActive) {
-                    // Calculate profit or loss
-                    const currentPrice = appleStock.price;
-                    currentTrade.profitLoss = (currentTrade.tradeDirection ? 1 : -1) * (currentPrice - currentTrade.entryPrice) *  numContracts;
+                    // Update the total PnL for the account with the final PnL of the closed trade
+                    simAccount.totalPnL += currentTrade.profitLoss;
+            
+                    // Log the closure and update of the account
+                    console.log(`Trade Closed - Final P&L: ${currentTrade.profitLoss}, Total Account P&L: ${simAccount.totalPnL}`);
+            
+                    // Display the updated total PnL
+                    const totalPnLDisplay = document.getElementById('pnl');
+                    if (totalPnLDisplay) {
+                        totalPnLDisplay.style.color = simAccount.totalPnL >= 0 ? 'green' : 'red';
+                        totalPnLDisplay.innerHTML = `Total P&L: $${simAccount.totalPnL.toFixed(2)}`;
+                    }
+            
+                    // Reset current trade
                     currentTrade.isActive = false;
-        
-                    // Update account total PnL
-                    simAccount.totalPnL += currentTrade.profitLoss ;
-        
-                    console.log(`Trade Closed. P&L: ${currentTrade.profitLoss}`);
-                    console.log(`Total P&L: ${simAccount.totalPnL}`);
-                    updateTradeDisplay();
-                    // Reset the current trade
                     currentTrade = null;
+            
+                    updateTradeDisplay(); // Refresh the trade display to show no active trades
                 }
             });
         }
