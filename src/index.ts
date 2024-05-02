@@ -211,9 +211,6 @@ function drawCandlesticks(candlesticks: Candlestick[]) {
     
     var height = canvas.height;
 
-    if(controls){
-         height = canvas.height-controls;
-    }
     
     // Clear the canvas
     ctx.clearRect(0, 0, width, height);
@@ -339,6 +336,12 @@ function updateTradeDisplay() {
 
 document.addEventListener('DOMContentLoaded', () => {
     const canvas = document.getElementById('stockChart') as HTMLCanvasElement | null;
+    const controls = document.getElementById('controls')?.clientHeight;
+
+    window.addEventListener('resize', resizeCanvas);
+
+    resizeCanvas();
+
     if (!canvas) {
         console.error('Canvas element not found!');
         return;
@@ -346,8 +349,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const ctx = canvas.getContext('2d');
     if(ctx){
-        ctx.canvas.width  = 0.8 * window.innerWidth;
-        ctx.canvas.height =  0.8 *window.innerHeight;
+        ctx.canvas.width  = window.innerWidth;
+
+        ctx.canvas.height =  window.innerHeight;
+        if(controls){
+            ctx.canvas.height = canvas.height - controls;
+       }
     }
     const startButton = document.getElementById('startSimulation');
     const periodicitySelect = document.getElementById('periodicity') as HTMLSelectElement;
@@ -452,3 +459,14 @@ document.addEventListener('DOMContentLoaded', () => {
     
     
 });
+
+function resizeCanvas() {
+    const canvas = document.getElementById('stockChart') as HTMLCanvasElement;
+    if (!canvas) return;
+
+    const controlsHeight = document.getElementById('controls')?.clientHeight || 0;
+    canvas.width = window.innerWidth * 0.8;  // Example: 80% of window width
+    canvas.height = window.innerHeight * 0.8 - controlsHeight;  // Adjust height based on controls
+
+    drawCandlesticks(candlesticks);  // Re-draw everything on the canvas
+}
